@@ -197,8 +197,9 @@ struct UserViewModelTests {
         let vm = makeVM()
         vm.habits = [Habit(title: "Read", description: "", xpReward: 20, frequency: .daily)]
         let baseGold = vm.user.gold
+        let bonus = vm.user.charisma / 10
         vm.completeHabit(vm.habits[0])
-        #expect(vm.user.gold == baseGold + 10) // xpReward / 2 = 10
+        #expect(vm.user.gold == baseGold + 10 + bonus) // xpReward / 2 = 10, plus charisma bonus
     }
 
     @Test @MainActor func completeHabit_doesNothingForUnknownHabitID() {
@@ -537,12 +538,17 @@ struct MilestoneTests {
         let vm = makeVM()
         let goal = makeGoal(targetValue: 100)
         vm.addGoal(goal)
-        let baseXP = vm.user.experience
         let baseGold = vm.user.gold
+
         // All four milestones fire: 25+50+100+200=375 XP, 10+25+50+100=185 gold
         vm.updateManualProgress(goalId: goal.id, newValue: 100)
-        #expect(vm.user.experience == baseXP + 375)
-        #expect(vm.user.gold == baseGold + 185)
+
+        // At level 1, 375 XP leads to level 3 (100 to lvl 2, 200 to lvl 3) with 75 XP remaining
+        #expect(vm.user.level == 3)
+        #expect(vm.user.experience == 75)
+
+        // Gold: 185 from milestones + level up bonuses (Lvl 2: 40, Lvl 3: 60) = 285 total gold gain
+        #expect(vm.user.gold == baseGold + 185 + 100)
     }
 
     @Test @MainActor func milestone25_doesNotDoubleAward() {
