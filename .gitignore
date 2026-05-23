@@ -69,3 +69,17 @@ fastlane/test_output
 agent.md
 CLAUDE.md
 GEMINI.md
+
+# Python compilation files
+**/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Terraform local state and modules
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+infra/*.zip
