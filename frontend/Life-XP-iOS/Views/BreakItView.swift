@@ -139,7 +139,7 @@ struct BreakItView: View {
 
     private var emptyStateView: some View {
         VStack(spacing: 20) {
-            Image(systemName: "heart.broken.fill")
+            Image(systemName: "link.slash")
                 .font(.system(size: 60))
                 .foregroundColor(.gray.opacity(0.6))
                 .padding(.top, 40)
