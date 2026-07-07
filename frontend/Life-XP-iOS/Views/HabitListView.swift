@@ -1,4 +1,5 @@
 import SwiftUI
+import HealthKit
 
 private func categoryColor(_ category: HabitCategory) -> Color {
     switch category {
@@ -20,9 +21,14 @@ struct HabitListView: View {
             List {
                 Section(header: Text("Your Daily Habits")) {
                     ForEach(viewModel.habits) { habit in
-                        HabitRowView(habit: habit, onComplete: {
-                            viewModel.completeHabit(habit)
-                        })
+                        HabitRowView(
+                            habit: habit,
+                            liveAverage: viewModel.headphoneAverages[habit.id],
+                            isHealthKitAvailable: HKHealthStore.isHealthDataAvailable() && healthKitManager.isAuthorized,
+                            onComplete: {
+                                viewModel.completeHabit(habit)
+                            }
+                        )
                         .onAppear {
                             viewModel.refreshHeadphoneExposure(for: habit, using: healthKitManager)
                         }
@@ -66,6 +72,8 @@ struct HabitListView: View {
 
 struct HabitRowView: View {
     let habit: Habit
+    var liveAverage: Double? = nil
+    var isHealthKitAvailable: Bool = true
     let onComplete: () -> Void
 
     var body: some View {
@@ -108,16 +116,37 @@ struct HabitRowView: View {
                             .font(.system(size: 9))
                     }
                 }
+                if habit.trackingType == .headphoneAudioExposure && !isHealthKitAvailable {
+                    Text("HealthKit unavailable — this habit won't update automatically")
+                        .font(.caption2)
+                        .foregroundColor(.orange)
+                }
             }
 
             Spacer()
 
-            Button(action: onComplete) {
-                Image(systemName: habit.isCompletedToday ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(habit.isCompletedToday ? .green : .blue)
-                    .font(.title2)
+            if habit.trackingType == .headphoneAudioExposure {
+                VStack(alignment: .trailing, spacing: 2) {
+                    if let liveAverage {
+                        Text("\(Int(liveAverage)) dB")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(liveAverage <= (habit.maxDecibels ?? 85) ? .green : .red)
+                        Text("avg today")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("—").foregroundColor(.secondary)
+                    }
+                }
+            } else {
+                Button(action: onComplete) {
+                    Image(systemName: habit.isCompletedToday ? "checkmark.circle.fill" : "circle")
+                        .foregroundColor(habit.isCompletedToday ? .green : .blue)
+                        .font(.title2)
+                }
+                .disabled(habit.isCompletedToday)
             }
-            .disabled(habit.isCompletedToday)
         }
         .padding(.vertical, 4)
     }
