@@ -18,16 +18,22 @@ extension LifeXPUser {
 }
 
 extension Habit {
-    static let previewHabits = [
-        Habit(title: "Hydrate", description: "Drink 2L of water",
-              xpReward: 20, frequency: .daily, category: .health),
-        Habit(title: "Morning Sprint", description: "Fast jog for 15m",
-              xpReward: 40, frequency: .daily, category: .physical, lastCompletedDate: Date()),
-        Habit(title: "Meditation", description: "10m mindfulness",
-              xpReward: 15, frequency: .daily, category: .mental),
-        Habit(title: "Call a Friend", description: "Stay connected",
-              xpReward: 25, frequency: .daily, category: .social)
-    ]
+    static let previewHabits: [Habit] = {
+        var hydrate = Habit(title: "Hydrate", description: "Drink 2L of water",
+                            xpReward: 20, frequency: .daily, category: .health)
+
+        var morningSprint = Habit(title: "Morning Sprint", description: "Fast jog for 15m",
+                                  xpReward: 40, frequency: .daily, category: .physical)
+        morningSprint.lastCompletedDate = Date()
+
+        let meditation = Habit(title: "Meditation", description: "10m mindfulness",
+                               xpReward: 15, frequency: .daily, category: .mental)
+
+        let callFriend = Habit(title: "Call a Friend", description: "Stay connected",
+                               xpReward: 25, frequency: .daily, category: .social)
+
+        return [hydrate, morningSprint, meditation, callFriend]
+    }()
 }
 
 extension Goal {
