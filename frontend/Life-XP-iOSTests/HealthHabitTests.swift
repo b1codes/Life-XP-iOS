@@ -137,6 +137,19 @@ struct HealthHabitEvaluationTests {
         #expect(vm.user.experience == 0)
     }
 
+    @Test @MainActor func addHabit_thenEvaluateSameDay_doesNotFetchOrAward() {
+        let vm = makeVM()
+        vm.addHabit(title: "Protect Hearing", description: "", experiencePoints: 20,
+                    trackingType: .headphoneAudioExposure, maxDecibels: 85.0)
+        var fetchCount = 0
+        let fetcher = FakeExposureFetcher(average: 70.0, onFetch: { fetchCount += 1 })
+
+        vm.evaluateHealthHabits(using: fetcher)
+
+        #expect(fetchCount == 0)
+        #expect(vm.user.experience == 0)
+    }
+
     @Test @MainActor func evaluateHealthHabits_secondConcurrentCallDoesNotDoubleFetchOrAward() {
         let vm = makeVM()
         vm.habits = [makeHeadphoneHabit(maxDecibels: 85.0)]

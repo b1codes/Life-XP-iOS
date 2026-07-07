@@ -19,7 +19,7 @@ extension LifeXPUser {
 
 extension Habit {
     static let previewHabits: [Habit] = {
-        var hydrate = Habit(title: "Hydrate", description: "Drink 2L of water",
+        let hydrate = Habit(title: "Hydrate", description: "Drink 2L of water",
                             xpReward: 20, frequency: .daily, category: .health)
 
         var morningSprint = Habit(title: "Morning Sprint", description: "Fast jog for 15m",

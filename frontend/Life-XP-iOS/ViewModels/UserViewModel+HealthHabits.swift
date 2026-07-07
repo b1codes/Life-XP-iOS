@@ -20,7 +20,8 @@ extension UserViewModel {
 
         for habit in habits where habit.trackingType == .headphoneAudioExposure {
             guard let maxDecibels = habit.maxDecibels else { continue }
-            if let lastEval = habit.lastEvaluatedHealthDate, calendar.isDate(lastEval, inSameDayAs: yesterday) {
+            if let lastEval = habit.lastEvaluatedHealthDate,
+               calendar.startOfDay(for: lastEval) >= calendar.startOfDay(for: yesterday) {
                 continue
             }
             guard let index = habits.firstIndex(where: { $0.id == habit.id }) else { continue }
@@ -36,8 +37,8 @@ extension UserViewModel {
                     self.completeHabit(self.habits[index])
                 } else {
                     self.habits[index].currentStreak = 0
+                    self.uploadToCloud()
                 }
-                self.uploadToCloud()
             }
         }
     }
