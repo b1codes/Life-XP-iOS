@@ -104,6 +104,13 @@ class CloudKitManager {
                     if let reminderTime = habit.reminderTime {
                         record["reminderTime"] = reminderTime as CKRecordValue
                     }
+                    record["trackingType"] = habit.trackingType.rawValue as CKRecordValue
+                    if let maxDecibels = habit.maxDecibels {
+                        record["maxDecibels"] = maxDecibels as CKRecordValue
+                    }
+                    if let lastEvaluatedHealthDate = habit.lastEvaluatedHealthDate {
+                        record["lastEvaluatedHealthDate"] = lastEvaluatedHealthDate as CKRecordValue
+                    }
                     return record
                 }
 
@@ -140,6 +147,12 @@ class CloudKitManager {
                 habit.currentStreak = record["currentStreak"] as? Int ?? 0
                 habit.longestStreak = record["longestStreak"] as? Int ?? 0
                 habit.reminderTime = record["reminderTime"] as? Date
+                if let trackingTypeString = record["trackingType"] as? String,
+                   let trackingType = HabitTrackingType(rawValue: trackingTypeString) {
+                    habit.trackingType = trackingType
+                }
+                habit.maxDecibels = record["maxDecibels"] as? Double
+                habit.lastEvaluatedHealthDate = record["lastEvaluatedHealthDate"] as? Date
                 if let categoryString = record["category"] as? String,
                    let category = HabitCategory(rawValue: categoryString) {
                     habit.category = category
