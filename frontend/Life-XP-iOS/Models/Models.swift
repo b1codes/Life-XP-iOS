@@ -65,6 +65,18 @@ enum StatType: String, Codable, CaseIterable {
     case strength, intelligence, vitality, charisma
 }
 
+enum HabitTrackingType: String, Codable, CaseIterable {
+    case manual
+    case headphoneAudioExposure
+
+    var displayName: String {
+        switch self {
+        case .manual: return "Manual"
+        case .headphoneAudioExposure: return "Headphone Audio Exposure (HealthKit)"
+        }
+    }
+}
+
 struct Habit: Identifiable, Codable {
     var id = UUID()
     var title: String
@@ -76,9 +88,62 @@ struct Habit: Identifiable, Codable {
     var currentStreak: Int = 0
     var longestStreak: Int = 0
     var reminderTime: Date?
+    var trackingType: HabitTrackingType = .manual
+    var maxDecibels: Double?
+    var lastEvaluatedHealthDate: Date?
+
     var isCompletedToday: Bool {
         guard let lastCompletedDate = lastCompletedDate else { return false }
         return Calendar.current.isDateInToday(lastCompletedDate)
+    }
+
+    init(title: String, description: String, xpReward: Int, frequency: HabitFrequency,
+         category: HabitCategory = .physical) {
+        self.title = title
+        self.description = description
+        self.xpReward = xpReward
+        self.frequency = frequency
+        self.category = category
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, description, xpReward, frequency, category
+        case lastCompletedDate, currentStreak, longestStreak, reminderTime
+        case trackingType, maxDecibels, lastEvaluatedHealthDate
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        title = try container.decode(String.self, forKey: .title)
+        description = try container.decode(String.self, forKey: .description)
+        xpReward = try container.decode(Int.self, forKey: .xpReward)
+        frequency = try container.decode(HabitFrequency.self, forKey: .frequency)
+        category = try container.decodeIfPresent(HabitCategory.self, forKey: .category) ?? .physical
+        lastCompletedDate = try container.decodeIfPresent(Date.self, forKey: .lastCompletedDate)
+        currentStreak = try container.decodeIfPresent(Int.self, forKey: .currentStreak) ?? 0
+        longestStreak = try container.decodeIfPresent(Int.self, forKey: .longestStreak) ?? 0
+        reminderTime = try container.decodeIfPresent(Date.self, forKey: .reminderTime)
+        trackingType = try container.decodeIfPresent(HabitTrackingType.self, forKey: .trackingType) ?? .manual
+        maxDecibels = try container.decodeIfPresent(Double.self, forKey: .maxDecibels)
+        lastEvaluatedHealthDate = try container.decodeIfPresent(Date.self, forKey: .lastEvaluatedHealthDate)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(description, forKey: .description)
+        try container.encode(xpReward, forKey: .xpReward)
+        try container.encode(frequency, forKey: .frequency)
+        try container.encode(category, forKey: .category)
+        try container.encodeIfPresent(lastCompletedDate, forKey: .lastCompletedDate)
+        try container.encode(currentStreak, forKey: .currentStreak)
+        try container.encode(longestStreak, forKey: .longestStreak)
+        try container.encodeIfPresent(reminderTime, forKey: .reminderTime)
+        try container.encode(trackingType, forKey: .trackingType)
+        try container.encodeIfPresent(maxDecibels, forKey: .maxDecibels)
+        try container.encodeIfPresent(lastEvaluatedHealthDate, forKey: .lastEvaluatedHealthDate)
     }
 }
 

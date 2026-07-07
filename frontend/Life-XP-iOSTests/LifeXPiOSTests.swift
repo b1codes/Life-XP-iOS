@@ -101,6 +101,43 @@ struct HabitTests {
         habit.lastCompletedDate = Calendar.current.date(byAdding: .day, value: -7, to: Date())
         #expect(habit.isCompletedToday == false)
     }
+
+    @Test func decode_missingHealthFields_defaultsToManualWithoutThrowing() throws {
+        // Simulates a Habit persisted by a build before trackingType/maxDecibels/lastEvaluatedHealthDate existed.
+        let legacyJSON = """
+        {
+            "id": "00000000-0000-0000-0000-000000000001",
+            "title": "Drink Water",
+            "description": "Stay hydrated",
+            "xpReward": 10,
+            "frequency": "daily",
+            "category": "health",
+            "currentStreak": 3,
+            "longestStreak": 5
+        }
+        """.data(using: .utf8)!
+
+        let habit = try JSONDecoder().decode(Habit.self, from: legacyJSON)
+        #expect(habit.title == "Drink Water")
+        #expect(habit.currentStreak == 3)
+        #expect(habit.trackingType == .manual)
+        #expect(habit.maxDecibels == nil)
+        #expect(habit.lastEvaluatedHealthDate == nil)
+    }
+
+    @Test func decode_thenEncode_roundTripsHealthFields() throws {
+        var habit = Habit(title: "Headphone Safety", description: "", xpReward: 20, frequency: .daily)
+        habit.trackingType = .headphoneAudioExposure
+        habit.maxDecibels = 85.0
+        habit.lastEvaluatedHealthDate = Date()
+
+        let data = try JSONEncoder().encode(habit)
+        let decoded = try JSONDecoder().decode(Habit.self, from: data)
+
+        #expect(decoded.trackingType == .headphoneAudioExposure)
+        #expect(decoded.maxDecibels == 85.0)
+        #expect(decoded.lastEvaluatedHealthDate != nil)
+    }
 }
 
 // MARK: - UserViewModel Tests
