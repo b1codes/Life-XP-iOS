@@ -19,7 +19,7 @@ struct ContentView: View {
                         Label("Dashboard", systemImage: "person.circle.fill")
                     }
 
-                HabitListView(viewModel: userViewModel)
+                HabitListView(viewModel: userViewModel, healthKitManager: healthKitManager)
                     .tabItem {
                         Label("Habits", systemImage: "checkmark.circle.fill")
                     }
@@ -64,6 +64,7 @@ struct ContentView: View {
                 if success {
                     healthKitManager.fetchTodayHealthData()
                     userViewModel.refreshHealthKitGoals(using: healthKitManager)
+                    userViewModel.evaluateHealthHabits(using: healthKitManager)
                 }
             }
         }

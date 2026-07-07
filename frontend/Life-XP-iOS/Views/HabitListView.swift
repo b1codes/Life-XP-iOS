@@ -11,6 +11,7 @@ private func categoryColor(_ category: HabitCategory) -> Color {
 
 struct HabitListView: View {
     @ObservedObject var viewModel: UserViewModel
+    @ObservedObject var healthKitManager: HealthKitManager
     @State private var showingAddHabit = false
     @State private var showingLockInView = false
 
@@ -22,6 +23,9 @@ struct HabitListView: View {
                         HabitRowView(habit: habit, onComplete: {
                             viewModel.completeHabit(habit)
                         })
+                        .onAppear {
+                            viewModel.refreshHeadphoneExposure(for: habit, using: healthKitManager)
+                        }
                     }
                     .onDelete(perform: viewModel.deleteHabit)
                 }
@@ -120,5 +124,5 @@ struct HabitRowView: View {
 }
 
 #Preview {
-    HabitListView(viewModel: .preview)
+    HabitListView(viewModel: .preview, healthKitManager: HealthKitManager())
 }
