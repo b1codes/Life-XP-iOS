@@ -5,6 +5,7 @@ import SwiftUI
 class UserViewModel: ObservableObject {
     @Published var user: LifeXPUser = LifeXPUser() { didSet { saveUser() } }
     @Published var habits: [Habit] = [] { didSet { saveHabits() } }
+    @Published var headphoneAverages: [UUID: Double] = [:]
     @Published var goals: [Goal] = [] { didSet { saveGoals() } }
 
     @Published var showingMilestoneReward = false
@@ -280,9 +281,18 @@ class UserViewModel: ObservableObject {
     }
 
     func addHabit(title: String, description: String, experiencePoints: Int,
-                  category: HabitCategory = .physical, reminderTime: Date? = nil) {
+                  category: HabitCategory = .physical, trackingType: HabitTrackingType = .manual,
+                  maxDecibels: Double? = nil, reminderTime: Date? = nil) {
         var newHabit = Habit(title: title, description: description,
                              xpReward: experiencePoints, frequency: .daily, category: category)
+        newHabit.trackingType = trackingType
+        newHabit.maxDecibels = maxDecibels
+        // A freshly-created HealthKit habit has no data for "yesterday" (the habit didn't exist).
+        // Mark today as already evaluated so the first real evaluation happens tomorrow, once a
+        // full day of samples exists — otherwise the no-data default (pass) would award a free XP.
+        if trackingType != .manual {
+            newHabit.lastEvaluatedHealthDate = Calendar.current.startOfDay(for: Date())
+        }
         newHabit.reminderTime = reminderTime
         habits.append(newHabit)
         if reminderTime != nil { scheduleReminder(for: newHabit) }
