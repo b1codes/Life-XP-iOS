@@ -1,0 +1,74 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Backend (FastAPI)",
+            "type": "shell",
+            "command": "./.vscode/run_backend.sh",
+            "isBackground": true,
+            "problemMatcher": {
+                "pattern": [
+                    {
+                        "regexp": ".",
+                        "file": 1,
+                        "location": 2,
+                        "message": 3
+                    }
+                ],
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "Starting Backend Setup and Run",
+                    "endsPattern": "Uvicorn running on"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Run Frontend (iOS Simulator)",
+            "type": "shell",
+            "command": "./.vscode/run_ios.sh",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Setup Backend Virtual Environment",
+            "type": "shell",
+            "command": "python3 -m venv .venv && source .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt",
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "Build iOS App for Simulator",
+            "type": "shell",
+            "command": "xcodebuild -project frontend/Life-XP-iOS.xcodeproj -scheme Life-XP-iOS -sdk iphonesimulator -configuration Debug -derivedDataPath frontend/build/DerivedData -quiet",
+            "presentation": {
+                "reveal": "always"
+            }
+        },
+        {
+            "label": "Launch iOS App on Simulator",
+            "type": "shell",
+            "command": "open -a Simulator && xcrun simctl install booted frontend/build/DerivedData/Build/Products/Debug-iphonesimulator/Life-XP-iOS.app && xcrun simctl launch booted blc.Life-XP-iOS",
+            "presentation": {
+                "reveal": "always"
+            }
+        }
+    ]
+}

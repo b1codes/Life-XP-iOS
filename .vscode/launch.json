@@ -1,0 +1,39 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Backend: FastAPI (Debug)",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "app.main:app",
+                "--reload",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                "8000"
+            ],
+            "cwd": "${workspaceFolder}/backend",
+            "python": "${workspaceFolder}/backend/.venv/bin/python",
+            "preLaunchTask": "Setup Backend Virtual Environment",
+            "jinja": true
+        },
+        {
+            "name": "Frontend: Run iOS App",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/.vscode/dummy.js",
+            "preLaunchTask": "Run Frontend (iOS Simulator)"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Run Both: Frontend + Backend",
+            "configurations": [
+                "Backend: FastAPI (Debug)",
+                "Frontend: Run iOS App"
+            ]
+        }
+    ]
+}
