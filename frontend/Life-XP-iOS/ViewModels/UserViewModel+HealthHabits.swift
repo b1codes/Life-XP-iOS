@@ -23,18 +23,20 @@ extension UserViewModel {
             if let lastEval = habit.lastEvaluatedHealthDate, calendar.isDate(lastEval, inSameDayAs: yesterday) {
                 continue
             }
+            guard let index = habits.firstIndex(where: { $0.id == habit.id }) else { continue }
+            // Mark evaluated synchronously, before the async fetch, so a second concurrent call to
+            // evaluateHealthHabits (e.g. onAppear firing again before this fetch completes) sees this
+            // guard above and skips — otherwise both invocations would pass the guard and award XP
+            // twice for the same day.
+            habits[index].lastEvaluatedHealthDate = yesterday
 
             fetcher.fetchHeadphoneExposure(for: yesterday) { [weak self] average in
                 guard let self, let index = self.habits.firstIndex(where: { $0.id == habit.id }) else { return }
-                self.habits[index].lastEvaluatedHealthDate = yesterday
                 if evaluateHeadphoneHabit(average: average, maxDecibels: maxDecibels) {
                     self.completeHabit(self.habits[index])
                 } else {
                     self.habits[index].currentStreak = 0
                 }
-                // `habits`'s didSet already persists to UserDefaults on every mutation above;
-                // uploadToCloud() here covers the fail branch, which doesn't route through
-                // completeHabit()'s own upload call.
                 self.uploadToCloud()
             }
         }

@@ -38,6 +38,21 @@ private struct FakeExposureFetcher: HeadphoneExposureFetching {
     }
 }
 
+/// A fetcher whose completion can be triggered manually, to simulate a second call to
+/// evaluateHealthHabits arriving before the first call's async fetch has resolved.
+private final class DeferredExposureFetcher: HeadphoneExposureFetching {
+    private(set) var pendingCompletions: [(Double?) -> Void] = []
+
+    func fetchHeadphoneExposure(for day: Date, completion: @escaping (Double?) -> Void) {
+        pendingCompletions.append(completion)
+    }
+
+    func completeNext(with average: Double?) {
+        guard !pendingCompletions.isEmpty else { return }
+        pendingCompletions.removeFirst()(average)
+    }
+}
+
 @Suite("Health Habit Evaluation")
 struct HealthHabitEvaluationTests {
 
@@ -120,5 +135,20 @@ struct HealthHabitEvaluationTests {
 
         #expect(fetchCount == 0)
         #expect(vm.user.experience == 0)
+    }
+
+    @Test @MainActor func evaluateHealthHabits_secondConcurrentCallDoesNotDoubleFetchOrAward() {
+        let vm = makeVM()
+        vm.habits = [makeHeadphoneHabit(maxDecibels: 85.0)]
+        let fetcher = DeferredExposureFetcher()
+
+        vm.evaluateHealthHabits(using: fetcher)   // fires a fetch, does not complete yet
+        vm.evaluateHealthHabits(using: fetcher)   // should skip: lastEvaluatedHealthDate already set
+
+        #expect(fetcher.pendingCompletions.count == 1)   // only one fetch was ever started
+
+        fetcher.completeNext(with: 70.0)   // resolve the first (and only) fetch
+
+        #expect(vm.user.experience == 20)   // awarded exactly once
     }
 }
