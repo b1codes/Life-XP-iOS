@@ -55,7 +55,7 @@ struct HabitListView: View {
                 }
             }
             .sheet(isPresented: $showingAddHabit) {
-                AddHabitView(viewModel: viewModel)
+                AddHabitView(viewModel: viewModel, healthKitManager: healthKitManager)
             }
             .sheet(isPresented: $showingLockInView) {
                 CreateLockInView(viewModel: viewModel)

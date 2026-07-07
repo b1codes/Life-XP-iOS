@@ -3,11 +3,14 @@ import SwiftUI
 struct AddHabitView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: UserViewModel
+    @ObservedObject var healthKitManager: HealthKitManager
 
     @State private var title = ""
     @State private var description = ""
     @State private var xpReward = 10
     @State private var category: HabitCategory = .physical
+    @State private var trackingType: HabitTrackingType = .manual
+    @State private var maxDecibels: Double = 85
     @State private var enableReminder = false
     @State private var reminderTime = Calendar.current.date(
         bySettingHour: 9, minute: 0, second: 0, of: Date()
@@ -33,6 +36,22 @@ struct AddHabitView: View {
                         .foregroundColor(.secondary)
                 }
 
+                Section(header: Text("Tracking")) {
+                    Picker("Tracking", selection: $trackingType) {
+                        ForEach(HabitTrackingType.allCases, id: \.self) { type in
+                            Text(type.displayName).tag(type)
+                        }
+                    }
+                    if trackingType == .headphoneAudioExposure {
+                        Stepper("Max \(Int(maxDecibels)) dB", value: $maxDecibels, in: 60...100, step: 1)
+                        if !healthKitManager.isAuthorized {
+                            Text("Requires HealthKit permission — you'll be prompted when you add this habit.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+
                 Section(header: Text("Reward")) {
                     Stepper("\(xpReward) XP", value: $xpReward, in: 5...100, step: 5)
                 }
@@ -51,9 +70,14 @@ struct AddHabitView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
+                        if trackingType == .headphoneAudioExposure {
+                            healthKitManager.requestAuthorization { _, _ in }
+                        }
                         viewModel.addHabit(
                             title: title, description: description,
                             experiencePoints: xpReward, category: category,
+                            trackingType: trackingType,
+                            maxDecibels: trackingType == .headphoneAudioExposure ? maxDecibels : nil,
                             reminderTime: enableReminder ? reminderTime : nil
                         )
                         dismiss()
@@ -66,5 +90,5 @@ struct AddHabitView: View {
 }
 
 #Preview {
-    AddHabitView(viewModel: .preview)
+    AddHabitView(viewModel: .preview, healthKitManager: HealthKitManager())
 }
