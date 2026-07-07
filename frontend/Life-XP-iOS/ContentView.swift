@@ -26,7 +26,7 @@ struct ContentView: View {
 
                 BreakItView(viewModel: userViewModel)
                     .tabItem {
-                        Label("Break It", systemImage: "link.slash")
+                        Label("Break It", systemImage: "hand.raised.slash.fill")
                     }
 
                 GoalsView(viewModel: userViewModel)
