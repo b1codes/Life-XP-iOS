@@ -83,3 +83,6 @@ GEMINI.md
 *.tfvars
 *.tfvars.json
 infra/*.zip
+
+# Frontend build
+frontend/build/
