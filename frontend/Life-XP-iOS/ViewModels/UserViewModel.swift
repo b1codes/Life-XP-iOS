@@ -5,8 +5,12 @@ import SwiftUI
 class UserViewModel: ObservableObject {
     @Published var user: LifeXPUser = LifeXPUser() { didSet { saveUser() } }
     @Published var habits: [Habit] = [] { didSet { saveHabits() } }
+    @Published var badHabits: [BadHabit] = [] { didSet { saveBadHabits() } }
     @Published var headphoneAverages: [UUID: Double] = [:]
     @Published var goals: [Goal] = [] { didSet { saveGoals() } }
+
+    @Published var isBreakItUnlocked = false
+    @Published var requireBiometricLock = false
 
     @Published var showingMilestoneReward = false
     @Published var lastMilestoneMessage = ""
@@ -74,11 +78,16 @@ class UserViewModel: ObservableObject {
     init(skipCloudSync: Bool = false) {
         loadUser()
         loadHabits()
+        loadBadHabits()
         loadGoals()
         requestNotificationPermission()
         resetBrokenStreaks()
         evaluateLockIn()
         scheduleAllReminders()
+
+        self.requireBiometricLock = UserDefaults.standard.bool(forKey: "RequireBiometricLock")
+        self.isBreakItUnlocked = !self.requireBiometricLock
+
         midnightObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.significantTimeChangeNotification,
             object: nil,
@@ -87,6 +96,17 @@ class UserViewModel: ObservableObject {
             self?.user.checkNewDay()
             self?.evaluateLockIn()
             self?.resetBrokenStreaks()
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            if self.requireBiometricLock {
+                self.isBreakItUnlocked = false
+            }
         }
     }
 

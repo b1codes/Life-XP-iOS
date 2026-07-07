@@ -24,6 +24,11 @@ struct ContentView: View {
                         Label("Habits", systemImage: "checkmark.circle.fill")
                     }
 
+                BreakItView(viewModel: userViewModel)
+                    .tabItem {
+                        Label("Break It", systemImage: "heart.broken.fill")
+                    }
+
                 GoalsView(viewModel: userViewModel)
                     .tabItem {
                         Label("Goals", systemImage: "flag.fill")
@@ -120,6 +125,20 @@ struct SettingsView: View {
                             healthKitManager.requestAuthorization { _, _ in }
                         }
                     }
+                }
+
+                Section(header: Text("Security")) {
+                    Toggle("Require Biometric Lock", isOn: Binding(
+                        get: { viewModel.requireBiometricLock },
+                        set: { newValue in
+                            viewModel.setBiometricLock(newValue) { success in
+                                // State is automatically updated inside UserViewModel on success
+                            }
+                        }
+                    ))
+                    Text("Requires Face ID or Touch ID authentication to access the Break It section.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
             }
             .navigationTitle("Settings")
