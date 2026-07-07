@@ -17,8 +17,12 @@ class HealthKitManager: ObservableObject {
         HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)!,
         HKObjectType.quantityType(forIdentifier: .heartRate)!,
         HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!,
-        HKObjectType.quantityType(forIdentifier: .dietaryWater)!
+        HKObjectType.quantityType(forIdentifier: .dietaryWater)!,
+        HKObjectType.quantityType(forIdentifier: .headphoneAudioExposure)!
     ]
+
+    private let headphoneExposureProvider = HeadphoneExposureProvider()
+    private var headphoneExposureCache: (day: Date, value: Double?)?
 
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
         guard HKHealthStore.isHealthDataAvailable() else {
@@ -197,4 +201,20 @@ class HealthKitManager: ObservableObject {
         }
         healthStore.execute(query)
     }
+
+    /// Not habit-scoped — a single cached (day, value) pair is enough since every headphone habit
+    /// reads the same underlying HealthKit samples for a given day. Avoids re-querying HealthKit
+    /// on every card refresh within the same calendar day.
+    func fetchHeadphoneExposure(for day: Date, completion: @escaping (Double?) -> Void) {
+        if let cached = headphoneExposureCache, Calendar.current.isDate(cached.day, inSameDayAs: day) {
+            completion(cached.value)
+            return
+        }
+        headphoneExposureProvider.fetchDailyAverage(for: day, healthStore: healthStore) { [weak self] value in
+            self?.headphoneExposureCache = (day: day, value: value)
+            completion(value)
+        }
+    }
 }
+
+extension HealthKitManager: HeadphoneExposureFetching {}
