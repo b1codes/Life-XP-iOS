@@ -12,28 +12,66 @@ echo "=========================================="
 echo "Opening iOS Simulator app..."
 open -a Simulator
 
-# 2. Get the ID of the booted simulator, or find/boot a default one
-echo "Checking for active simulator..."
-BOOTED_SIM=$(xcrun simctl list devices | grep "Booted" | head -n 1 | sed -E 's/.* \(([0-9A-F-]+)\) \(Booted\)/\1/')
+# 2. Get the ID of a booted or available simulator that meets the deployment target
+MIN_VERSION=$(grep "IPHONEOS_DEPLOYMENT_TARGET" frontend/Life-XP-iOS.xcodeproj/project.pbxproj | head -n 1 | sed -E 's/.*= ([0-9.]+);/\1/')
+if [ -z "$MIN_VERSION" ]; then
+    MIN_VERSION="26.2"
+fi
+
+echo "Minimum iOS version required: $MIN_VERSION"
+echo "Searching for a compatible simulator..."
+
+BOOTED_SIM=$(xcrun simctl list devices -j | python3 -c "
+import json, sys
+min_ver_str = '$MIN_VERSION'
+def parse_version(runtime_key):
+    parts = runtime_key.split('.')[-1].replace('iOS-', '').split('-')
+    try:
+        return tuple(int(p) for p in parts if p.isdigit())
+    except:
+        return (0,)
+min_ver = tuple(int(p) for p in min_ver_str.split('.'))
+try:
+    data = json.load(sys.stdin)
+    devices = data.get('devices', {})
+    booted_compatible = []
+    shutdown_compatible = []
+    for runtime, dev_list in devices.items():
+        if 'SimRuntime.iOS' not in runtime:
+            continue
+        ver = parse_version(runtime)
+        if ver < min_ver:
+            continue
+        for dev in dev_list:
+            if not dev.get('isAvailable', False):
+                continue
+            is_iphone = 'iPhone' in dev.get('name', '')
+            item = (is_iphone, ver, dev.get('udid'), dev.get('name'))
+            if dev.get('state') == 'Booted':
+                booted_compatible.append(item)
+            else:
+                shutdown_compatible.append(item)
+    booted_compatible.sort(key=lambda x: (x[0], x[1]), reverse=True)
+    shutdown_compatible.sort(key=lambda x: (x[0], x[1]), reverse=True)
+    if booted_compatible:
+        print(booted_compatible[0][2])
+    elif shutdown_compatible:
+        print(shutdown_compatible[0][2])
+    else:
+        print('')
+except Exception as e:
+    sys.stderr.write(f'Error: {e}\n')
+")
 
 if [ -z "$BOOTED_SIM" ]; then
-    # No simulator is booted. Let's look for a standard iPhone simulator (e.g. iPhone 15 or 16)
-    echo "No booted simulator found. Searching for available simulators..."
-    DEFAULT_SIM=$(xcrun simctl list devices | grep -E "iPhone (15|16|17|SE)" | grep -v "unavailable" | head -n 1 | sed -E 's/.* \(([0-9A-F-]+)\) .*/\1/')
-    
-    if [ -z "$DEFAULT_SIM" ]; then
-        # Fallback to any available simulator device
-        DEFAULT_SIM=$(xcrun simctl list devices | grep -E "\(" | grep -v "unavailable" | grep -v "Device Types" | grep -v "Booted" | head -n 1 | sed -E 's/.* \(([0-9A-F-]+)\) .*/\1/')
-    fi
-    
-    if [ -n "$DEFAULT_SIM" ]; then
-        echo "Booting simulator (ID: $DEFAULT_SIM)..."
-        xcrun simctl boot "$DEFAULT_SIM"
-        BOOTED_SIM="$DEFAULT_SIM"
-    else
-        echo "Error: No available iOS simulator found. Please open Xcode and install a simulator."
-        exit 1
-    fi
+    echo "Error: No available iOS simulator found that supports iOS $MIN_VERSION or higher."
+    exit 1
+fi
+
+# Boot the simulator if it is not currently booted
+if ! xcrun simctl list devices | grep "$BOOTED_SIM" | grep -q "Booted"; then
+    echo "Booting simulator (ID: $BOOTED_SIM)..."
+    xcrun simctl boot "$BOOTED_SIM"
 fi
 
 echo "Using active simulator: $BOOTED_SIM"
