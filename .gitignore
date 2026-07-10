@@ -69,6 +69,8 @@ fastlane/test_output
 agent.md
 CLAUDE.md
 GEMINI.md
+PRODUCT.md
+DESIGN.md
 
 # Python compilation files
 **/__pycache__/

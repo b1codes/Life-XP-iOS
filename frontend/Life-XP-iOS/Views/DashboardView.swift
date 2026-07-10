@@ -14,13 +14,17 @@ struct DashboardView: View {
 
                 // Character Header
                 HStack(alignment: .center, spacing: 15) {
-                    Circle()
-                        .fill(Color.blue.opacity(0.3))
-                        .frame(width: 80, height: 80)
-                        .overlay(
-                            Text("👤")
-                                .font(.system(size: 40))
-                        )
+                    ZStack {
+                        Circle()
+                            .fill(Color.llcGlassFill)
+                        Circle()
+                            .stroke(Color.llcGlassBorder, lineWidth: 0.5)
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 32))
+                            .foregroundStyle(.secondary)
+                    }
+                    .background(.ultraThinMaterial, in: Circle())
+                    .frame(width: 80, height: 80)
 
                     VStack(alignment: .leading, spacing: 5) {
                         Text(viewModel.user.name)
@@ -42,7 +46,7 @@ struct DashboardView: View {
                         // XP Bar
                         VStack(alignment: .leading, spacing: 4) {
                             ProgressView(value: viewModel.user.xpProgress)
-                                .tint(.blue)
+                                .tint(.primary)
 
                             Text("\(viewModel.user.experience) / \(viewModel.user.xpToNextLevel) XP")
                                 .font(.caption2)
@@ -51,15 +55,15 @@ struct DashboardView: View {
                     }
                 }
                 .padding()
-                .background(RoundedRectangle(cornerRadius: 15).fill(Color(.systemBackground)).shadow(radius: 2))
+                .llcGlass(borderRadius: 15)
                 .padding(.horizontal)
 
                 // Stats Grid
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
-                    StatCard(title: "Strength", value: viewModel.user.strength, icon: "figure.walk", color: .red)
-                    StatCard(title: "Intelligence", value: viewModel.user.intelligence, icon: "brain", color: .purple)
-                    StatCard(title: "Vitality", value: viewModel.user.vitality, icon: "heart.fill", color: .green)
-                    StatCard(title: "Charisma", value: viewModel.user.charisma, icon: "star.fill", color: .yellow)
+                    StatCard(title: "Strength", value: viewModel.user.strength, icon: "figure.walk", color: .llcStatStrength)
+                    StatCard(title: "Intelligence", value: viewModel.user.intelligence, icon: "brain", color: .llcStatIntelligence)
+                    StatCard(title: "Vitality", value: viewModel.user.vitality, icon: "heart.fill", color: .llcStatVitality)
+                    StatCard(title: "Charisma", value: viewModel.user.charisma, icon: "star.fill", color: .llcStatCharisma)
                 }
                 .padding(.horizontal)
 
@@ -76,10 +80,13 @@ struct DashboardView: View {
 
                         Button(action: fetchAndSync, label: {
                             Image(systemName: "arrow.triangle.2.circlepath")
+                                .foregroundStyle(.primary)
                                 .padding(8)
-                                .background(Color.blue.opacity(0.1))
-                                .clipShape(Circle())
                         })
+                        .buttonStyle(.plain)
+                        .background(Color.llcGlassFill, in: Circle())
+                        .overlay(Circle().stroke(Color.llcGlassBorder, lineWidth: 0.5))
+                        .llcThermalGlow(diameter: 70)
                     }
                     .padding(.horizontal)
 
@@ -150,8 +157,7 @@ struct DashboardView: View {
                         )
                     }
                     .padding()
-                    .background(RoundedRectangle(cornerRadius: 15)
-                        .fill(Color(.systemBackground)).shadow(radius: 2))
+                    .llcGlass(borderRadius: 15)
                     .padding(.horizontal)
                 }
 
@@ -231,7 +237,7 @@ struct StatCard: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemBackground)).shadow(radius: 1))
+        .llcGlass(borderRadius: 12)
     }
 }
 
@@ -248,7 +254,7 @@ struct HealthStatCard: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Image(systemName: icon)
-                    .foregroundColor(.blue)
+                    .foregroundStyle(.secondary)
                 Text(title)
                     .font(.caption)
             }
@@ -257,7 +263,7 @@ struct HealthStatCard: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color(.systemBackground)).shadow(radius: 1))
+        .llcGlass(borderRadius: 12)
     }
 }
 
@@ -269,13 +275,14 @@ struct LockInBanner: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("LOCK IN ACTIVE")
-                        .font(.caption)
-                        .fontWeight(.black)
-                        .foregroundColor(.orange)
+                        .font(.system(size: 12, weight: .heavy))
+                        .tracking(1.5)
+                        .foregroundStyle(.primary)
 
                     Text("Day \(currentDay) of \(challenge.durationDays)")
                         .font(.title3)
                         .fontWeight(.bold)
+                        .foregroundStyle(.primary)
                 }
 
                 Spacer()
@@ -283,24 +290,23 @@ struct LockInBanner: View {
                 HStack(spacing: 4) {
                     ForEach(0..<challenge.maxStrikes, id: \.self) { index in
                         Image(systemName: index < challenge.strikesCount ? "heart.slash.fill" : "heart.fill")
-                            .foregroundColor(index < challenge.strikesCount ? .gray : .red)
+                            .foregroundStyle(index < challenge.strikesCount ? Color.secondary : Color.red)
                     }
                 }
             }
 
             ProgressView(value: progress)
-                .tint(.orange)
+                .tint(.primary)
         }
         .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 15)
-                .fill(Color(.systemBackground))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 15)
-                        .stroke(LinearGradient(colors: [.orange, .yellow], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 2)
-                )
-                .shadow(radius: 5)
-        )
+        .background(alignment: .topLeading) {
+            // Active challenge reads as energy in progress — a contained
+            // ambient ember, not a static orange/yellow accent border.
+            ThermalBurstView(diameter: 160, restingOpacity: 0.3)
+                .offset(x: -40, y: -40)
+                .allowsHitTesting(false)
+        }
+        .llcGlass(borderRadius: 15)
         .padding(.horizontal)
     }
 

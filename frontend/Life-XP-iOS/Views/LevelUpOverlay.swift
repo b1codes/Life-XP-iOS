@@ -4,77 +4,91 @@ struct LevelUpOverlay: View {
     let level: Int
     @Binding var isShowing: Bool
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var scale: CGFloat = 0.5
     @State private var opacity: Double = 0.0
-    @State private var rotation: Double = -10.0
 
     var body: some View {
         ZStack {
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
-                .onTapGesture {
-                    withAnimation {
-                        isShowing = false
-                    }
-                }
+                .onTapGesture { dismiss() }
 
             VStack(spacing: 20) {
-                Text("LEVEL UP!")
-                    .font(.system(size: 48, weight: .black, design: .rounded))
-                    .foregroundColor(.yellow)
-                    .shadow(color: .orange, radius: 2, x: 2, y: 2)
+                Text("LEVEL UP")
+                    .font(.system(size: 28, weight: .heavy))
+                    .tracking(2)
+                    .foregroundStyle(.primary)
+                    .shadow(color: .llcThermalCorona.opacity(0.5), radius: 12)
 
                 ZStack {
+                    ThermalBurstView(diameter: 220)
+
                     Circle()
-                        .fill(LinearGradient(
-                            colors: [.blue, .purple],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ))
+                        .fill(Color.llcGlassFill)
+                        .overlay(
+                            Circle().stroke(Color.llcGlassBorder, lineWidth: 0.5)
+                        )
                         .frame(width: 150, height: 150)
-                        .shadow(radius: 10)
 
                     Text("\(level)")
-                        .font(.system(size: 80, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .font(.system(size: 72, weight: .black))
+                        .kerning(-1)
+                        .foregroundStyle(.primary)
                 }
                 .scaleEffect(scale)
-                .rotationEffect(.degrees(rotation))
 
-                Text("You've reached a new tier of greatness!")
-                    .font(.headline)
-                    .foregroundColor(.white)
+                Text("Your stats have been recalibrated.")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
 
-                Button("HECK YES") {
-                    withAnimation {
-                        isShowing = false
-                    }
+                Button(action: dismiss) {
+                    Text("Continue")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .padding(.vertical, 14)
+                        .frame(maxWidth: .infinity)
                 }
-                .font(.headline)
-                .foregroundColor(.white)
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(RoundedRectangle(cornerRadius: 15).fill(Color.blue))
+                .buttonStyle(.plain)
+                .background(Color.llcGlassFill)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.llcGlassBorder, lineWidth: 0.5)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .llcThermalGlow(diameter: 110)
                 .padding(.horizontal, 40)
             }
             .padding()
-            .background(
-                RoundedRectangle(cornerRadius: 25)
-                    .fill(Color(.systemBackground))
-                    .shadow(radius: 20)
-            )
+            .llcGlass(borderRadius: 25)
             .padding(30)
             .scaleEffect(scale)
             .opacity(opacity)
         }
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0)) {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+
+            if reduceMotion {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    scale = 1.0
+                    opacity = 1.0
+                }
+                return
+            }
+
+            withAnimation(.interpolatingSpring(stiffness: 180, damping: 12)) {
                 scale = 1.0
                 opacity = 1.0
-                rotation = 0
             }
+        }
+    }
+
+    private func dismiss() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        withAnimation {
+            isShowing = false
         }
     }
 }
